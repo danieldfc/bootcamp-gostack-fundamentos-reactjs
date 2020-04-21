@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { format, parseISO } from 'date-fns';
 
 import income from '../../assets/income.svg';
 import outcome from '../../assets/outcome.svg';
@@ -16,11 +17,10 @@ interface Transaction {
   id: string;
   title: string;
   value: number;
-  formattedValue: string;
   formattedDate: string;
   type: 'income' | 'outcome';
   category: { title: string } | null;
-  created_at: Date;
+  created_at: string;
 }
 
 interface Balance {
@@ -41,7 +41,13 @@ const Dashboard: React.FC = () => {
     async function loadTransactions(): Promise<void> {
       const response = await api.get('transactions');
 
-      const transactionsAll = response.data.transactions;
+      const transactionsAll: Transaction[] = response.data.transactions.map(
+        (transaction: Transaction) => ({
+          ...transaction,
+          formattedDate: format(parseISO(transaction.created_at), 'dd/MM/yy'),
+        }),
+      );
+
       const balanceAll = response.data.balance;
 
       setTransactions(transactionsAll);
@@ -95,7 +101,7 @@ const Dashboard: React.FC = () => {
             <tbody>
               {transactions &&
                 transactions.map(
-                  ({ id, title, type, value, category, created_at }) => (
+                  ({ id, title, type, value, category, formattedDate }) => (
                     <tr key={id}>
                       <td className={title}>{title}</td>
                       <td className={type}>
@@ -106,7 +112,7 @@ const Dashboard: React.FC = () => {
                         }`}
                       </td>
                       <td>{category ? category.title : 'Nenhum'}</td>
-                      <td>{created_at}</td>
+                      <td>{formattedDate}</td>
                     </tr>
                   ),
                 )}
